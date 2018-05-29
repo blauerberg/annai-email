@@ -14,3 +14,8 @@
 Route::get('/', function () {
     return view('welcome');
 });
+
+// Email Routes.
+Route::get('email', 'EmailController@create')->name('email.create');
+Route::get('email/success', 'EmailController@success')->name('email.success');
+Route::post('email', 'EmailController@store')->name('email.store');
