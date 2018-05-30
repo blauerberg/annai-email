@@ -16,3 +16,8 @@ use Illuminate\Http\Request;
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+Route::post('email/sendgrid', 'SendGridController@sendgrid_send');
+Route::post('email/sparkpost', 'SparkPostController@sparkpost_send');
+Route::post('email/sendgrid', 'SendGridController@sendgrid_send_api');
+Route::post('email/sparkpost', 'SparkPostController@sparkpost_send_api');

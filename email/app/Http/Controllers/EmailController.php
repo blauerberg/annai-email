@@ -3,9 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use SparkPost\SparkPost;
 use GuzzleHttp\Client;
-use Http\Adapter\Guzzle6\Client as GuzzleAdapter;
 use Log;
 
 class EmailController extends Controller
@@ -44,13 +42,44 @@ class EmailController extends Controller
       'html_body' => nl2br($request->input('email_body'))
     );
 
-    // Create send methods array.
-    $send_methods = array('sendgrid_send', 'sparkpost_send');
+    // Set success flag.
+    $success = false;
 
-    // Loop through send methods.
-    foreach ($send_methods as $val) {
-      $success = call_user_func(array($this, $val), $email);
-      if ($success == true) {
+    // Internal method.
+    // Create send methods array.
+    // $send_methods = array(
+    //   array(__NAMESPACE__ .'\SendGridController', 'sendgrid_send'),
+    //   array(__NAMESPACE__ .'\SparkPostController', 'sparkpost_send')
+    // );
+    //
+    // // Attempt to send.
+    // foreach ($send_methods as $method) {
+    //   $success = call_user_func_array($method, array($email));
+    //   if ($success === true) {
+    //     break;
+    //   }
+    // }
+
+    // API method.
+    $client = new Client();
+    $api_methods = array(
+      '/api/email/sendgrid/',
+      '/api/email/sparkpost/'
+    );
+
+    foreach ($api_methods as $method) {
+      $response = $client->request('POST', getenv('APP_URL') . $method, [
+        'http_errors' => false,
+        'form_params' => [
+          'email_from' => $email['from'],
+          'email_to' => $email['to'],
+          'email_subject' => $email['subject'],
+          'email_body' => $email['body']
+        ]
+      ]);
+      $status = $response->getStatusCode();
+      if ($status == 200) {
+        $success = true;
         break;
       }
     }
@@ -72,9 +101,9 @@ class EmailController extends Controller
     }
   }
 
-  /**
-   * Application send request.
-   */
+   /**
+    * Application send request.
+    */
    public function success() {
      $email = session('email');
 
@@ -84,7 +113,7 @@ class EmailController extends Controller
      }
      // Flush session.
      session()->forget('email');
-     
+
      return view('email.success', [
        'email_from' => $email['from'],
        'email_to' => $email['to'],
@@ -93,80 +122,4 @@ class EmailController extends Controller
        'email_html_body' => $email['html_body']
      ]);
    }
-
-  /**
-   * Sendgrid send request.
-   */
-  protected function sendgrid_send($data) {
-    $success_status_code = array('202');
-
-    $email = new \SendGrid\Mail\Mail();
-    $email->setFrom($data['from']);
-    $email->setSubject($data['subject']);
-    $email->addTo($data['to']);
-    $email->addContent(
-      "text/plain", $data['body']
-    );
-    $sendgrid = new \SendGrid(getenv('SENDGRID_API_KEY'));
-
-    // Error handling.
-    try {
-      $response = $sendgrid->send($email);
-      if (in_array($response->statusCode(), $success_status_code)) {
-        return true;
-      }
-      else {
-        // Log error and return false.
-        Log::error('Error in function sendgrid_send(): ' . $response->statusCode());
-        return false;
-      }
-    }
-    catch (Exception $e) {
-      // Log error and return false.
-      Log::error('Error in function sendgrid_send(): ' . $e->getMessage());
-      return false;
-    }
-  }
-
-  /**
-   * Sparkpost send request.
-   */
-  protected function sparkpost_send($data) {
-    $success_status_code = array('200');
-
-    $httpClient = new GuzzleAdapter(new Client());
-    $sparky = new SparkPost($httpClient, ["key" => getenv('SPARKPOST_API_KEY')]);
-    $promise = $sparky->transmissions->post([
-      'content' => [
-        'from' => [
-          'name' => 'Paulkimphoto',
-          'email' => $data['from'],
-        ],
-        'subject' => $data['subject'],
-        'text' => $data['body'],
-      ],
-      'recipients' => [
-        ['address' => ['email' => $data['to']]]
-      ],
-    ]);
-
-    // Error handling.
-    try {
-      $response = $promise->wait();
-      if (in_array($response->getStatusCode(), $success_status_code)) {
-        return true;
-      }
-      else {
-        // Log error and return false.
-        Log::error('Error in function sparkpost_send(): ' . $response->getStatusCode());
-        return false;
-      }
-    }
-    catch (Exception $e) {
-      // Log error and return false.
-      Log::error('Error in function sparkpost_send(): ' . $e->getCode() . ' ' . $e->getMessage());
-      return false;
-    }
-  }
-
 }
