@@ -9,8 +9,11 @@ class SendGridController extends Controller
 
     /**
      * Sendgrid send via API request.
+     * @param $request is a POST request.
+     * @return JSON boolean and status code.
      */
      public static function sendgrid_send_api(Request $request) {
+       // Build the email array.
        $email = array(
          'from' => $request->input('email_from'),
          'to' => $request->input('email_to'),
@@ -24,6 +27,8 @@ class SendGridController extends Controller
 
     /**
      * Sendgrid send request.
+     * @param array $data contains email parameters.
+     * @return boolean
      */
     public static function sendgrid_send($data) {
       $success_status_code = array('202');
@@ -35,6 +40,8 @@ class SendGridController extends Controller
       $email->addContent(
         "text/plain", $data['body']
       );
+
+      // Init SendGrid class.
       $sendgrid = new \SendGrid(getenv('SENDGRID_API_KEY'));
 
       // Error handling.

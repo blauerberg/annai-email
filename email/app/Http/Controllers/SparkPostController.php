@@ -2,18 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use SparkPost\SparkPost;
 use GuzzleHttp\Client;
 use Http\Adapter\Guzzle6\Client as GuzzleAdapter;
+use Illuminate\Http\Request;
+use SparkPost\SparkPost;
 
 class SparkPostController extends Controller
 {
 
   /**
    * Sparkpost send via API request.
+   * @param $request is a POST request.
+   * @return JSON boolean and status code.
    */
    public static function sparkpost_send_api(Request $request) {
+     // Build the email array.
      $email = array(
        'from' => $request->input('email_from'),
        'to' => $request->input('email_to'),
@@ -27,16 +30,19 @@ class SparkPostController extends Controller
 
   /**
    * Sparkpost send request.
+   * @param array $data contains email parameters.
+   * @return boolean
    */
   public static function sparkpost_send($data) {
     $success_status_code = array('200');
 
+    // Init SparkPost class.
     $httpClient = new GuzzleAdapter(new Client());
     $sparky = new SparkPost($httpClient, ["key" => getenv('SPARKPOST_API_KEY')]);
     $promise = $sparky->transmissions->post([
       'content' => [
         'from' => [
-          'name' => 'Paulkimphoto',
+          'name' => 'The Email Application',
           'email' => $data['from'],
         ],
         'subject' => $data['subject'],

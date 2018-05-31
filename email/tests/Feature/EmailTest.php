@@ -2,12 +2,10 @@
 
 namespace Tests\Feature;
 
-use Tests\TestCase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Http\Controllers\EmailController;
 use App\Http\Controllers\SendGridController;
 use App\Http\Controllers\SparkPostController;
-use App\Http\Controllers\EmailController;
+use Tests\TestCase;
 
 class EmailTest extends TestCase
 {
